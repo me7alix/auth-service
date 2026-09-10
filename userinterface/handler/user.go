@@ -15,8 +15,8 @@ func User(userService service.UserService, authService service.AuthService) http
 	r.Use(middleware.Auth(authService))
 
 	r.Patch("/nickname", func (w http.ResponseWriter, r *http.Request) {
-		user, _ := middleware.GetUserFromContext(r.Context())
-		
+		user := middleware.GetUserFromContext(r.Context())
+
 		var data map[string]any
 		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
@@ -34,7 +34,7 @@ func User(userService service.UserService, authService service.AuthService) http
 	})
 
 	r.Patch("/password", func (w http.ResponseWriter, r *http.Request) {
-		user, _ := middleware.GetUserFromContext(r.Context())
+		user := middleware.GetUserFromContext(r.Context())
 
 		var data map[string]any
 		err := json.NewDecoder(r.Body).Decode(&data)
@@ -53,7 +53,7 @@ func User(userService service.UserService, authService service.AuthService) http
 	})
 
 	r.Patch("/pfp", func (w http.ResponseWriter, r *http.Request) {
-		user, _ := middleware.GetUserFromContext(r.Context())
+		user := middleware.GetUserFromContext(r.Context())
 
 		var data map[string]any
 		err := json.NewDecoder(r.Body).Decode(&data)
@@ -62,7 +62,7 @@ func User(userService service.UserService, authService service.AuthService) http
 			return
 		}
 
-		err = userService.UpdateProfilePicture(user.ID, data["password"].(string))
+		err = userService.UpdateProfilePicture(user.ID, data["pfp"].(string))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

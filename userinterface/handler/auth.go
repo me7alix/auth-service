@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
+	"encoding/json"
 	"user-service/application/service"
 	"user-service/userinterface/middleware"
 
@@ -18,7 +18,7 @@ func Auth(authService service.AuthService) http.Handler {
 		r.Use(middleware.Auth(authService))
 
 		r.Get("/", func (w http.ResponseWriter, r *http.Request) {
-			user, _ := middleware.GetUserFromContext(r.Context())
+			user := middleware.GetUserFromContext(r.Context())
 
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(user)
@@ -58,13 +58,14 @@ func Auth(authService service.AuthService) http.Handler {
 		r.Use(middleware.Creds)
 
 		r.Post("/", func (w http.ResponseWriter, r *http.Request) {
-			creds, _ := middleware.GetCredsFromContext(r.Context())
+			creds := middleware.GetCredsFromContext(r.Context())
 
 			token, err := authService.Login(creds)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 			}
 
+			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprintf(w, `{"token": "%s"}`, token)
 		})
 	})
@@ -73,13 +74,14 @@ func Auth(authService service.AuthService) http.Handler {
 		r.Use(middleware.Creds)
 
 		r.Post("/", func (w http.ResponseWriter, r *http.Request) {
-			creds, _ := middleware.GetCredsFromContext(r.Context())
+			creds := middleware.GetCredsFromContext(r.Context())
 
 			token, err := authService.Register(creds)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 			}
 
+			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprintf(w, `{"token": "%s"}`, token)
 		})
 	})

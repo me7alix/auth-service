@@ -31,9 +31,9 @@ func Creds(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
-} 
+}
 
-func GetCredsFromContext(ctx context.Context) (dtos.Credentials, bool) {
-	creds, ok := ctx.Value(CredsContextKey).(dtos.Credentials)
-	return creds, ok
+func GetCredsFromContext(ctx context.Context) dtos.Credentials {
+	creds, _ := ctx.Value(CredsContextKey).(dtos.Credentials)
+	return creds
 }

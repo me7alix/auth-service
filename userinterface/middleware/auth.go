@@ -38,13 +38,12 @@ func Auth(authService service.AuthService) func (next http.Handler) http.Handler
 			}
 
 			ctx := context.WithValue(r.Context(), AuthContextKey, user)
-
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
-func GetUserFromContext(ctx context.Context) (entities.User, bool) {
-	user, ok := ctx.Value(AuthContextKey).(entities.User)
-	return user, ok
+func GetUserFromContext(ctx context.Context) entities.User {
+	user, _ := ctx.Value(AuthContextKey).(entities.User)
+	return user
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"user-service/application/service"
 	"user-service/userinterface/handler"
@@ -12,6 +13,7 @@ import (
 
 
 func Run(
+	port        int,
 	userService service.UserService,
 	authService service.AuthService,
 ) {
@@ -22,8 +24,8 @@ func Run(
 	r.Mount("/user", handler.User(userService, authService))
 	r.Mount("/auth", handler.Auth(authService))
 
-	fmt.Println("Servier starting on port 8080...")
-	if err := http.ListenAndServe(":8080", r); err != nil {
+	log.Printf("Server starting on port %v...\n", port)
+	if err := http.ListenAndServe(fmt.Sprintf(":%v", port), r); err != nil {
 		panic(err)
 	}
 }

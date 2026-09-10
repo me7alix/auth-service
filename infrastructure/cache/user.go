@@ -1,15 +1,17 @@
 package cache
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"time"
+	"errors"
+	"context"
+	"encoding/json"
 	"user-service/application/cache"
 	"user-service/domain/entities"
 	"user-service/domain/errs"
 	db "user-service/infrastructure"
 
+	"github.com/phuslu/log"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -26,34 +28,35 @@ func NewUserCache(redisURL string) cache.UserCache {
 }
 
 func handleRedisError(err error) error {
-	switch (err) {
-	case redis.Nil:
+	if err == nil { return nil }
+	if errors.Is(err, redis.Nil) {
 		return errs.ErrUserNotFound
-	default:
+	} else {
 		return errs.ErrCaching
 	}
 }
 
 func (c *userCache) SetUser(userID uint, user entities.User) error {
+	log.Debug().Msgf("cache: SetUser(%v) %v", userID, user)
 	jsonBytes, err := json.Marshal(user)
 	if err != nil {
-		return handleRedisError(err)
+		log.Debug().Msg(err.Error())
+		return errs.ErrCaching
 	}
-
 	key := fmt.Sprintf("user:%d", userID)
-	return c.rdb.Set(c.ctx, key, string(jsonBytes), time.Minute * 30).Err()
+	err = c.rdb.Set(c.ctx, key, string(jsonBytes), time.Minute * 30).Err()
+	return handleRedisError(err)
 }
 
 func (c *userCache) GetUser(userID uint) (entities.User, error) {
 	val, err := c.rdb.Get(c.ctx, fmt.Sprintf("user:%d", userID)).Result()
 	if err != nil {
-		return entities.User{}, err
+		return entities.User{}, handleRedisError(err)
 	}
-
 	var user entities.User
 	if err := json.Unmarshal([]byte(val), &user); err != nil {
-		return entities.User{}, err
+		return entities.User{}, handleRedisError(err)
 	}
-
+	log.Debug().Msgf("cache: GetUser(%v) %v", userID, user)
 	return user, nil
 }

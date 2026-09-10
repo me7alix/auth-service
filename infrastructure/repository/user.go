@@ -1,14 +1,15 @@
 package repository
 
 import (
+	"fmt"
 	"database/sql"
-	"log"
 	"user-service/application/dtos"
 	"user-service/application/repository"
 	"user-service/domain/entities"
 	"user-service/domain/errs"
 	db "user-service/infrastructure"
 
+	"github.com/phuslu/log"
 	"github.com/lib/pq"
 )
 
@@ -19,9 +20,9 @@ type userRepository struct {
 func NewUserRepository(databaseURL string) repository.UserRepository {
 	dbClient := db.NewDBClient(databaseURL)
 	if dbClient == nil {
-		log.Panicln("wrong database url")
+		panic(fmt.Errorf("wrong databse url"))
 	}
-	
+
 	userRep := &userRepository{
 		dbClient: dbClient,
 	}
@@ -34,14 +35,17 @@ func NewUserRepository(databaseURL string) repository.UserRepository {
 }
 
 func handlePQError(err error) error {
+	if err == nil { return nil }
 	if pqErr, ok := err.(*pq.Error); ok {
 		switch pqErr.Code.Name() {
 		case "unique_violation":
 			return errs.ErrNicknameAlreadyExists
 		default:
+			log.Debug().Msgf(err.Error())
 			return errs.ErrInternalServer
 		}
 	}
+	log.Debug().Msgf(err.Error())
 	return errs.ErrInternalServer
 }
 
@@ -66,9 +70,7 @@ func (r *userRepository) Create(user dtos.Credentials) (uint, error) {
 	RETURNING id`
 	var id uint
 	err := r.dbClient.Client.QueryRow(sqlStmt, entities.UserRole, user.Nickname, user.Password).Scan(&id)
-	if err != nil {
-		return 0, handlePQError(err)
-	}
+	if err != nil { return 0, handlePQError(err) }
 	return id, nil
 }
 
@@ -115,23 +117,20 @@ func (r *userRepository) GetUser(userID uint) (entities.User, error) {
 func (r *userRepository) UpdateNickname(userID uint, nickname string) error {
 	_, err := r.dbClient.Client.Exec(
 		"UPDATE users SET nickname = $1 WHERE id = $2",
-		nickname, userID,
-	)
+		nickname, userID)
 	return handlePQError(err)
 }
 
 func (r *userRepository) UpdatePassword(userID uint, password string) error {
 	_, err := r.dbClient.Client.Exec(
 		"UPDATE users SET password = $1 WHERE id = $2",
-		password, userID,
-	)
+		password, userID)
 	return handlePQError(err)
 }
 
 func (r *userRepository) UpdateProfilePicture(userID uint, pfp string) error {
 	_, err := r.dbClient.Client.Exec(
 		"UPDATE users SET pfp = $1 WHERE id = $2",
-		pfp, userID,
-	)
+		pfp, userID)
 	return handlePQError(err)
 }
